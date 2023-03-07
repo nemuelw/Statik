@@ -60,6 +60,18 @@ class VTScan:
         else:
             print("{} [!]{} Can't reach VirusTotal (No internet connection)".format(RED, RESET))
 
+    def display_malicious_findings(self, results):
+        for r, _ in results:
+            if results[r].get("category") == "malicious":
+                print("="*25)
+                print_info("Engine name", results[r].get("engine_name"))
+                print_info("Engine version", results[r].get("engine_version"))
+                print_info("Category", results[r].get("category"))
+                print_info("Result", results[r].get("result"))
+                print_info("Method", results[r].get("method"))
+                print_info("Update", results[r].get("engine_update"))
+                print("="*25)
+
     def perform_analysis(self, file_id):
         analysis_url = self.api_url + "analyses/" + file_id
         res = requests.post(analysis_url, headers=self.headers)
@@ -74,18 +86,24 @@ class VTScan:
                 print_info("Undetected", undetected)
                 results = result.get("data").get("attributes").get("results")
                 self.display_malicious_findings(results)                
+            elif status == "queued":
+                with open(os.path.abspath(self.sample), "rb") as f:
+                    sample_hash = hashlib.sha256(f.read()).hexdigest()
+                    self.get_vt_info(sample_hash)
 
-    def display_malicious_findings(self, results):
-        for r, _ in results:
-            if results[r].get("category") == "malicious":
-                print("="*25)
-                print_info("Engine name", results[r].get("engine_name"))
-                print_info("Engine version", results[r].get("engine_version"))
-                print_info("Category", results[r].get("category"))
-                print_info("Result", results[r].get("result"))
-                print_info("Method", results[r].get("method"))
-                print_info("Update", results[r].get("engine_update"))
-                print("="*25)
+    def get_malicious_sample_info(self, hash):
+        info_url = self.api_url + "files/" + hash
+        res = requests.post(info_url, headers=self.headers)
+        if res.status_code == 200:
+            result = res.json()
+            if result.get("data").get("attributes").get("last-analysis-results"):
+                stats = result.get("data").get("attributes").get("last-analysis-stats")
+                malicious = str(stats.get("malicious"))
+                undetected = str(stats.get("undetected"))
+                print_info("Malicious", malicious)
+                print_info("Undetected", undetected)
+                results = result.get("data").get("attributes").get("last-analysis-results")
+                self.display_malicious_findings(results)
 
 class MalwareSample:
     
