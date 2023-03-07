@@ -16,12 +16,12 @@ Script to automate the static analysis of a potentially malicious sample
   pip3 install -r requirements.txt
   ```
 
-- Edit the config file to contain your VirusTotal API key
+- Edit the config file to contain your VirusTotal API key instead
 
 ## Usage
 
 ```
-python3 statik.py sample/sample
+python3 statik.py sample/mal
 ```
 
-Replace 'sample/sample' with the file you would like to analyze
+Onwards, replace 'sample/mal' with the file you would like to analyze
