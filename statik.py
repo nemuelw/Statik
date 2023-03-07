@@ -9,7 +9,7 @@ class MalwareSample:
     def generate_hashes(self):
         pass
 
-    def generate_fuzzy_hash(self):
+    def vt_check(self):
         pass
 
 if __name__ == "__main__":

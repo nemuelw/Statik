@@ -1,4 +1,5 @@
 binary2strings==0.1.9
 cffi==1.15.1
+colorama==0.4.6
 pycparser==2.21
 six==1.16.0
