@@ -16,7 +16,10 @@ class MalwareSample:
         self.sample = file
 
     def get_file_info(self):
-        pass
+        size = os.stat(self.sample).st_size
+        file_type = filetype.guess(self.sample)
+        print(size)
+        print(file_type)
 
     def generate_hashes(self):
         with open(self.sample, "rb") as f:
@@ -30,7 +33,7 @@ class MalwareSample:
         pass
 
     def analyze(self):
-        pass
+        self.get_file_info()
 
 if __name__ == "__main__":
     init()
