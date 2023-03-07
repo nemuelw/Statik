@@ -10,30 +10,69 @@ import sys
 
 from colorama import init, Fore
 
+def print_header(title):
+    title = "[*] " + title
+    print(f"{GRAY} {title} {RESET}")
+    print("{} {}".format(GRAY, '-'*len(title)))
+
+def print_info(name, info):
+    print(" {} : {}".format(name, info))
+
 class MalwareSample:
     
     def __init__(self, file) -> None:
         self.sample = file
 
-    def get_file_info(self):
+    def get_basic_file_info(self):
+        file_name = os.path.basename(self.sample)
+        if "." in file_name:
+            tmp = file_name.split(".")
+            name = tmp[0]
+            ext = tmp[1]
+        else:
+            name = file_name
+            ext = None
         size = os.stat(self.sample).st_size
-        file_type = filetype.guess(self.sample)
-        print(size)
-        print(file_type)
+        kind = filetype.guess(self.sample)
+        print_info("File name", name)
+        print_info("Extension", ext)
+        print_info("File size", size)
+        if kind is None:
+            kind = "Could not guess the file type"
+        print_info("File type", kind)
 
     def generate_hashes(self):
         with open(self.sample, "rb") as f:
-            content = f.read()
-        self.md5 = hashlib.md5(content).hexdigest()
-        self.sha1 = hashlib.sha1(content).hexdigest()
-        self.sha256 = hashlib.sha256(content).hexdigest()
-        self.sha512 = hashlib.sha512(content).hexdigest()
+            self.binary = f.read()
+        self.md5 = hashlib.md5(self.binary).hexdigest()
+        self.sha1 = hashlib.sha1(self.binary).hexdigest()
+        self.sha256 = hashlib.sha256(self.binary).hexdigest()
+        self.sha512 = hashlib.sha512(self.binary).hexdigest()
+        print_info("MD5", "\n "+self.md5)
+        print_info("SHA1", "\n "+self.sha1)
+        print_info("SHA256", "\n "+self.sha256)
+        print_info("SHA512", "\n "+self.sha512)
+
+    def extract_strings(self):
+        strings = b2s.extract_all_strings(self.binary, min_chars=8, only_interesting=True)
+        for string in strings:
+            print(" " + string[0])
 
     def vt_check(self):
         pass
 
     def analyze(self):
-        self.get_file_info()
+        print_header("Basic File Info : ")
+        self.get_basic_file_info()
+        print()
+        print_header("File Hashes : ")
+        self.generate_hashes()
+        print()
+        print_header("Extracted Strings : ")
+        self.extract_strings()
+        print()
+        print_header("VirusTotal Check : ")
+        self.vt_check()
 
 if __name__ == "__main__":
     init()
@@ -57,4 +96,3 @@ if __name__ == "__main__":
 
     sample = MalwareSample(file=file)
     sample.analyze()
-
