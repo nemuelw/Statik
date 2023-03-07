@@ -9,6 +9,7 @@ import os
 import requests
 import sys
 import urllib.request
+import virustotal_python as vtp
 
 from colorama import init, Fore
 
@@ -31,18 +32,16 @@ def load_config():
     with open("config", "r") as f:
         content = f.read()
     config = json.loads(content)
-    return config['api_url'], config['api_key']
+    return config['api_key']
 
 class VTScan:
 
-    def __init__(self, sample, api_url, api_key) -> None:
-        self.headers = {
-            "x-apikey": api_key,
-            "User-Agent": "Statik v.1.0.0",
-            "Accept-Encoding": "gzip,deflate"
-        }
+    def __init__(self, sample, api_key) -> None:
         self.sample = sample
-        self.api_url = api_url
+        self.api_key = api_key
+        self.headers = {
+            'x-apikey': api_key
+        }
 
     def analyze(self):
         if has_internet_access():
@@ -52,11 +51,38 @@ class VTScan:
                     open(os.path.abspath(self.sample) , "rb")
                 )
             }
-            self.res = requests.post(self.api_url+"files", headers=self.headers, files=self.files)
-            if self.res.status_code == 200:
-                result = self.res.json()
-                file_id = result.get("data").get("id")
-            self.perform_analysis(file_id)
+            with vtp.Virustotal(self.api_key) as vt:
+                res = vt.request("files", files=self.files, method="POST")
+                if res.status_code == 200:
+                    link = res.json().get("data").get("links").get("self")
+                    res = requests.get(link, headers=self.headers)
+                    print(res.json())
+                    response = res.json()
+                    status = response.get("data").get("attributes").get("status")
+                    if status == "completed":
+                        stats = response.get("data").get("attributes").get("stats")
+                        malicious = str(stats.get("malicious"))
+                        undetected = str(stats.get("undetected"))
+                        print_info("Malicious", malicious)
+                        print_info("Undetected", undetected)
+                        results = response.get("data").get("attributes").get("results")
+                        self.display_malicious_findings(results)
+                    elif status == "queued":
+                        with open(os.path.abspath(self.sample), "rb") as f:
+                            b = f.read()
+                        file_id = hashlib.sha256(b).hexdigest()
+                        res = vt.request(f"files/{file_id}")
+                        response = res.json()
+                        if response.get("data").get("attributes").get("last-analysis-results"):
+                            stats = response.get("data").get("attributes").get("last-analysis-stats")
+                            malicious = str(stats.get("malicious"))
+                            undetected = str(stats.get("undetected"))
+                            print_info("Malicious", malicious)
+                            print_info("Undetected", undetected)
+                            results = response.get("data").get("attributes").get("last-analysis-results")
+                            self.display_malicious_findings(results)
+                        else:
+                            print(f"{RED} [!] {RESET} The provided path does not point to a file")
         else:
             print("{} [!]{} Can't reach VirusTotal (No internet connection)".format(RED, RESET))
 
@@ -71,39 +97,6 @@ class VTScan:
                 print_info("Method", results[r].get("method"))
                 print_info("Update", results[r].get("engine_update"))
                 print("="*25)
-
-    def perform_analysis(self, file_id):
-        analysis_url = self.api_url + "analyses/" + file_id
-        res = requests.post(analysis_url, headers=self.headers)
-        if res.status_code == 200:
-            result = res.json()
-            status = result.get("data").get("attributes").get("status")
-            if status == "completed":
-                stats = result.get("data").get("attributes").get("stats")
-                malicious = str(stats.get("malicious"))
-                undetected = str(stats.get("undetected"))
-                print_info("Malicious", malicious)
-                print_info("Undetected", undetected)
-                results = result.get("data").get("attributes").get("results")
-                self.display_malicious_findings(results)                
-            elif status == "queued":
-                with open(os.path.abspath(self.sample), "rb") as f:
-                    sample_hash = hashlib.sha256(f.read()).hexdigest()
-                    self.get_vt_info(sample_hash)
-
-    def get_malicious_sample_info(self, hash):
-        info_url = self.api_url + "files/" + hash
-        res = requests.post(info_url, headers=self.headers)
-        if res.status_code == 200:
-            result = res.json()
-            if result.get("data").get("attributes").get("last-analysis-results"):
-                stats = result.get("data").get("attributes").get("last-analysis-stats")
-                malicious = str(stats.get("malicious"))
-                undetected = str(stats.get("undetected"))
-                print_info("Malicious", malicious)
-                print_info("Undetected", undetected)
-                results = result.get("data").get("attributes").get("last-analysis-results")
-                self.display_malicious_findings(results)
 
 class MalwareSample:
     
@@ -147,14 +140,14 @@ class MalwareSample:
 
     def vt_check(self):
         try:
-            api_url, api_key = load_config()
-            if api_key == "" or api_key == "":
+            api_key = load_config()
+            if api_key == "":
                 print(f"{RED} [!] {RESET} Missing api_url or api_key")
                 exit(1)
         except:
             print(f"{RED} [!] {RESET} Error loading API_URL and/or API_KEY")
             exit(1)
-        vt = VTScan(self.sample, api_url, api_key)
+        vt = VTScan(self.sample, api_key)
         vt.analyze()
 
     def analyze(self):
