@@ -73,16 +73,19 @@ class VTScan:
                 print_info("Malicious", malicious)
                 print_info("Undetected", undetected)
                 results = result.get("data").get("attributes").get("results")
-                for r in results:
-                    if results[r].get("category") == "malicious":
-                        print("="*25)
-                        print_info("Engine name", results[r].get("engine_name"))
-                        print_info("Engine version", results[r].get("engine_version"))
-                        print_info("Category", results[r].get("category"))
-                        print_info("Result", results[r].get("result"))
-                        print_info("Method", results[r].get("method"))
-                        print_info("Update", results[r].get("engine_update"))
-                        print("="*25)
+                self.display_malicious_findings(results)                
+
+    def display_malicious_findings(self, results):
+        for r, _ in results:
+            if results[r].get("category") == "malicious":
+                print("="*25)
+                print_info("Engine name", results[r].get("engine_name"))
+                print_info("Engine version", results[r].get("engine_version"))
+                print_info("Category", results[r].get("category"))
+                print_info("Result", results[r].get("result"))
+                print_info("Method", results[r].get("method"))
+                print_info("Update", results[r].get("engine_update"))
+                print("="*25)
 
 class MalwareSample:
     
@@ -125,8 +128,12 @@ class MalwareSample:
             print(" " + string[0])
 
     def vt_check(self):
-        api_url, api_key = load_config()
-        if api_key == "" or api_key == "":
+        try:
+            api_url, api_key = load_config()
+            if api_key == "" or api_key == "":
+                print(f"{RED} [!] {RESET} Missing api_url or api_key")
+                exit(1)
+        except:
             print(f"{RED} [!] {RESET} Error loading API_URL and/or API_KEY")
             exit(1)
         vt = VTScan(self.sample, api_url, api_key)
