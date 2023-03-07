@@ -26,36 +26,63 @@ def has_internet_access():
         return True
     except:
         return False
-
-def load_api_key():
-    with open("conf", "r") as f:
+    
+def load_config():
+    with open("config", "r") as f:
         content = f.read()
-    return json.loads(content)['api_key']
+    config = json.loads(content)
+    return config['api_url'], config['api_key']
 
 class VTScan:
 
-    def __init__(self, sample, api_key) -> None:
+    def __init__(self, sample, api_url, api_key) -> None:
         self.headers = {
             "x-apikey": api_key,
             "User-Agent": "Statik v.1.0.0",
             "Accept-Encoding": "gzip,deflate"
         }
         self.sample = sample
+        self.api_url = api_url
 
-    def upload(self):
+    def analyze(self):
         if has_internet_access():
-            files = {
+            self.files = {
                 "file": (
                     os.path.basename(self.sample),
                     open(os.path.abspath(self.sample) , "rb")
                 )
             }
-            res = requests.post()
+            self.res = requests.post(self.api_url+"files", headers=self.headers, files=self.files)
+            if self.res.status_code == 200:
+                result = self.res.json()
+                file_id = result.get("data").get("id")
+            self.perform_analysis(file_id)
         else:
             print("{} [!]{} Can't reach VirusTotal (No internet connection)".format(RED, RESET))
 
-    def print_results(self):
-        pass
+    def perform_analysis(self, file_id):
+        analysis_url = self.api_url + "analyses/" + file_id
+        res = requests.post(analysis_url, headers=self.headers)
+        if res.status_code == 200:
+            result = res.json()
+            status = result.get("data").get("attributes").get("status")
+            if status == "completed":
+                stats = result.get("data").get("attributes").get("stats")
+                malicious = str(stats.get("malicious"))
+                undetected = str(stats.get("undetected"))
+                print_info("Malicious", malicious)
+                print_info("Undetected", undetected)
+                results = result.get("data").get("attributes").get("results")
+                for r in results:
+                    if results[r].get("category") == "malicious":
+                        print("="*25)
+                        print_info("Engine name", results[r].get("engine_name"))
+                        print_info("Engine version", results[r].get("engine_version"))
+                        print_info("Category", results[r].get("category"))
+                        print_info("Result", results[r].get("result"))
+                        print_info("Method", results[r].get("method"))
+                        print_info("Update", results[r].get("engine_update"))
+                        print("="*25)
 
 class MalwareSample:
     
@@ -98,9 +125,12 @@ class MalwareSample:
             print(" " + string[0])
 
     def vt_check(self):
-        api_key = load_api_key()
-        vt = VTScan(self.sample, api_key)
-        vt.upload()
+        api_url, api_key = load_config()
+        if api_key == "" or api_key == "":
+            print(f"{RED} [!] {RESET} Error loading API_URL and/or API_KEY")
+            exit(1)
+        vt = VTScan(self.sample, api_url, api_key)
+        vt.analyze()
 
     def analyze(self):
         print_header("Basic File Info : ")

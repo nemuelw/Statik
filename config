@@ -1,0 +1,4 @@
+{
+    "api_url": "https://www.virustotal.com/api/v3/",
+    "api_key": "YOUR_API_KEY_HERE"
+}
