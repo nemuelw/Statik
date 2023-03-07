@@ -15,10 +15,16 @@ class MalwareSample:
     def __init__(self, file) -> None:
         self.sample = file
 
-    
+    def get_file_info(self):
+        pass
 
     def generate_hashes(self):
-        pass
+        with open(self.sample, "rb") as f:
+            content = f.read()
+        self.md5 = hashlib.md5(content).hexdigest()
+        self.sha1 = hashlib.sha1(content).hexdigest()
+        self.sha256 = hashlib.sha256(content).hexdigest()
+        self.sha512 = hashlib.sha512(content).hexdigest()
 
     def vt_check(self):
         pass

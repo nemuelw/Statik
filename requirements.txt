@@ -1,4 +1,4 @@
-binary2strings==0.1.6
+binary2strings==0.1.9
 certifi==2022.12.7
 cffi==1.15.1
 charset-normalizer==3.1.0
