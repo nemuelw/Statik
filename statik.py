@@ -82,7 +82,7 @@ class VTScan:
                             results = response.get("data").get("attributes").get("last-analysis-results")
                             self.display_malicious_findings(results)
                         else:
-                            print(f"{RED} [!] {RESET} The provided path does not point to a file")
+                            print(f"{RED} [!] {RESET} Could not analyze the file here :(")
         else:
             print("{} [!]{} Can't reach VirusTotal (No internet connection)".format(RED, RESET))
 
