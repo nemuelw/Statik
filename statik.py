@@ -28,7 +28,7 @@ def has_internet_access():
         return False
 
 def load_api_key():
-    with open("key.json", "r") as f:
+    with open("conf", "r") as f:
         content = f.read()
     return json.loads(content)['api_key']
 
@@ -40,10 +40,17 @@ class VTScan:
             "User-Agent": "Statik v.1.0.0",
             "Accept-Encoding": "gzip,deflate"
         }
+        self.sample = sample
 
     def upload(self):
         if has_internet_access():
-            pass
+            files = {
+                "file": (
+                    os.path.basename(self.sample),
+                    open(os.path.abspath(self.sample) , "rb")
+                )
+            }
+            res = requests.post()
         else:
             print("{} [!]{} Can't reach VirusTotal (No internet connection)".format(RED, RESET))
 
