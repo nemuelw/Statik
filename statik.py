@@ -165,11 +165,9 @@ class MalwareSample:
 
 if __name__ == "__main__":
     init()
-    GREEN = Fore.GREEN
     BLUE = Fore.BLUE
     YELLOW = Fore.YELLOW
     RED = Fore.RED
-    GRAY = Fore.LIGHTBLACK_EX
     RESET = Fore.RESET
 
     args = sys.argv
