@@ -1,0 +1,4 @@
+binary2strings==0.1.9
+cffi==1.15.1
+pycparser==2.21
+six==1.16.0
