@@ -1,8 +1,6 @@
 # Author : Nemuel Wainaina
 # Script to automate Static Malware Analysis
 
-import requests
-
 class MalwareSample:
     
     def __init__(self, file) -> None:
