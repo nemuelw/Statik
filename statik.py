@@ -4,19 +4,51 @@
 import binary2strings as b2s
 import filetype
 import hashlib
+import json
 import os
 import requests
 import sys
+import urllib.request
 
 from colorama import init, Fore
 
 def print_header(title):
     title = "[*] " + title
-    print(f"{GRAY} {title} {RESET}")
-    print("{} {}".format(GRAY, '-'*len(title)))
+    print(f"{BLUE} {title} {RESET}")
+    print("{} {} {}".format(BLUE, '-'*len(title), RESET))
 
 def print_info(name, info):
-    print(" {} : {}".format(name, info))
+    print("{} {} {}: {}".format(YELLOW, name, RESET, info))
+
+def has_internet_access():
+    try:
+        urllib.request.urlopen("https://google.com")
+        return True
+    except:
+        return False
+
+def load_api_key():
+    with open("key.json", "r") as f:
+        content = f.read()
+    return json.loads(content)['api_key']
+
+class VTScan:
+
+    def __init__(self, sample, api_key) -> None:
+        self.headers = {
+            "x-apikey": api_key,
+            "User-Agent": "Statik v.1.0.0",
+            "Accept-Encoding": "gzip,deflate"
+        }
+
+    def upload(self):
+        if has_internet_access():
+            pass
+        else:
+            print("{} [!]{} Can't reach VirusTotal (No internet connection)".format(RED, RESET))
+
+    def print_results(self):
+        pass
 
 class MalwareSample:
     
@@ -54,12 +86,14 @@ class MalwareSample:
         print_info("SHA512", "\n "+self.sha512)
 
     def extract_strings(self):
-        strings = b2s.extract_all_strings(self.binary, min_chars=8, only_interesting=True)
+        strings = b2s.extract_all_strings(self.binary, min_chars=8, only_interesting=False)
         for string in strings:
             print(" " + string[0])
 
     def vt_check(self):
-        pass
+        api_key = load_api_key()
+        vt = VTScan(self.sample, api_key)
+        vt.upload()
 
     def analyze(self):
         print_header("Basic File Info : ")
@@ -77,6 +111,8 @@ class MalwareSample:
 if __name__ == "__main__":
     init()
     GREEN = Fore.GREEN
+    BLUE = Fore.BLUE
+    YELLOW = Fore.YELLOW
     RED = Fore.RED
     GRAY = Fore.LIGHTBLACK_EX
     RESET = Fore.RESET
