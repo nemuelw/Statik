@@ -8,6 +8,7 @@ import json
 import os
 import requests
 import sys
+import time
 import urllib.request
 import virustotal_python as vtp
 
@@ -56,7 +57,6 @@ class VTScan:
                 if res.status_code == 200:
                     link = res.json().get("data").get("links").get("self")
                     res = requests.get(link, headers=self.headers)
-                    print(res.json())
                     response = res.json()
                     status = response.get("data").get("attributes").get("status")
                     if status == "completed":
